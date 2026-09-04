@@ -1,1 +1,0 @@
-# shulgailya.github.io
