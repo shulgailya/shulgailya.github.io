@@ -206,6 +206,26 @@
   .nav-drop .num{ font-family: var(--mono); font-size:10px; color: var(--muted-dim); }
   @media (max-width: 780px){ .nav-drop{ display:none; } }
 
+  /* phones and small tablets: the nav spans the whole top edge, so once the page scrolls under it,
+     a soft dark fade sits behind the nav to keep it readable. Taps still pass through the fade. */
+  @media (max-width: 780px){
+    header.site-nav::before{
+      content:'';
+      position:absolute; left:0; right:0; top:0;
+      height: calc(100% + 28px);
+      z-index:-1;
+      background: rgba(28,27,25,0.88);
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+      mask-image: linear-gradient(to bottom, #000 55%, transparent);
+      opacity:0;
+      transition: opacity .35s ease;
+      pointer-events:none;
+    }
+    header.site-nav.is-scrolled::before{ opacity:1; }
+    .nav-mark, .nav-links > a, .nav-trigger{ mix-blend-mode: normal; }
+  }
+
   /* ============ HERO ============ */
   .hero{
     position: relative;
@@ -475,8 +495,11 @@
     line-height: 1.7;
   }
   /* line one: type of project. line two: kind of project. Each stays on its own line. */
-  .index-meta span{ display:block; white-space:nowrap; }
-  .index-meta span + span{ color: var(--muted-dim); }
+  .index-meta span{ display:block; white-space:nowrap; transition: color .35s ease, transform .35s ease; }
+  .index-meta span + span{ color: var(--muted-dim); transition-delay: .05s; }
+  /* hover: both lines step up a shade and slide with the arrow, the second line a beat behind */
+  .index-item a:hover .index-meta span{ color: var(--paper); transform: translateX(6px); }
+  .index-item a:hover .index-meta span + span{ color: var(--muted); }
   .index-arrow{
     font-family: var(--serif);
     font-style: italic;
@@ -674,7 +697,14 @@
     max-width: calc(100% - 68ch - 64px);
     pointer-events: none;
   }
-  .spread-orn .wv{ width: 100%; height: 100%; }
+  .spread-orn .wv{ position: relative; width: 100%; height: 100%; }
+  /* live icons: the moving wave field is drawn on a canvas under the icon, cut to its shape */
+  .spread-orn canvas{
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  }
+  .spread-orn.is-live .wv > g[clip-path]{ display: none; }
   .orn-overlook{ color: var(--mint); --orn-h: 170px; --orn-ar: 616 / 392; }
   .orn-recycle{ color: var(--green); --orn-h: 150px; --orn-ar: 400 / 388; }
   .orn-tazo{ color: var(--gold); --orn-h: 170px; --orn-ar: 623 / 375; }
@@ -2219,76 +2249,86 @@
     setTimeout(revealAll, 2000);
   }
 
-  // ---- Wave backgrounds (landing page and contact): living wave field ----
-  // Same diagonal sine lines as the project icons, but worked out for every pixel on the graphics
-  // card so they can move like water instead of sliding as one sheet: the ripple travels along
-  // each line, two slow swells push the lines from side to side, the ripple height breathes, and
-  // the lines get a little heavier and lighter as the swell passes through them.
-  document.querySelectorAll('.wave-bg').forEach(function(host){
-    const cv = host.querySelector('canvas');
+  // ---- Living wave field: landing page, contact, and the project icons ----
+  // Diagonal sine lines worked out for every pixel on the graphics card so they can move like water
+  // instead of sliding as one sheet: the ripple travels along each line, two slow swells push the
+  // lines from side to side, the ripple height breathes, and the lines get a little heavier and
+  // lighter as the swell passes through them. The backgrounds draw it large and faint; the project
+  // icons draw the same field smaller and bolder, cut to the icon's shape.
+  const WAVE_FRAG = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+    uniform vec2 uSize;      // canvas size in device px
+    uniform float uDpr;
+    uniform float uScale;    // CSS px per field unit (1 for the backgrounds, smaller for the icons)
+    uniform vec2 uW;         // line half-weight and how much it swells, in field units
+    uniform vec3 uColor;
+    uniform vec4 uT;         // swell A, swell B, breathing (each 0-1 through its cycle), ripple travel
+    const float TAU = 6.2831853;
+    const float PITCH = 18.0;     // space between lines
+    const float LAMBDA = 270.0;   // ripple length
+    const float AMP = 21.0;       // ripple height
+    void main(){
+      vec2 p = vec2(gl_FragCoord.x, uSize.y - gl_FragCoord.y) / (uDpr * uScale);   // field units from the top-left
+      float u = (p.x - p.y) * 0.70710678;   // along the lines (they run bottom-left to top-right)
+      float v = (p.x + p.y) * 0.70710678;   // across the lines
+
+      float a1 = TAU * (u / 1100.0 + v / 760.0 - uT.x);        // big slow swell
+      float a2 = TAU * (u / 640.0 - v / 1300.0 + uT.y) + 1.3;   // smaller counter-swell
+      float a3 = TAU * (u / 1500.0 - v / 900.0 + uT.z);        // ripple height breathing
+      float ph = TAU * (u - uT.w) / LAMBDA;                     // the ripple itself
+      float amp = AMP * (1.0 + 0.3 * sin(a3));
+      float rip = sin(ph);
+
+      // every line is a contour of g, one per PITCH
+      float g = v - 19.0 * sin(a1) - 9.0 * sin(a2) - amp * rip;
+      float gu = -(19.0 * cos(a1) * TAU / 1100.0 + 9.0 * cos(a2) * TAU / 640.0
+                 + AMP * 0.3 * cos(a3) * TAU / 1500.0 * rip + amp * cos(ph) * TAU / LAMBDA);
+      float gv = 1.0 - (19.0 * cos(a1) * TAU / 760.0 - 9.0 * cos(a2) * TAU / 1300.0
+                 - AMP * 0.3 * cos(a3) * TAU / 900.0 * rip);
+      float dist = abs(g - PITCH * floor(g / PITCH + 0.5)) / length(vec2(gu, gv));   // to the nearest line
+
+      float halfW = uW.x + uW.y * sin(a1 + 0.9);               // line weight follows the big swell
+      float cover = clamp((halfW - dist) * uScale * uDpr + 0.5, 0.0, 1.0);
+      gl_FragColor = vec4(uColor * cover, cover);
+    }`;
+
+  function waveField(host, cv, opt){
     let gl = null;
     try{ gl = cv.getContext('webgl', { antialias:false, depth:false, stencil:false, powerPreference:'low-power' }); }catch(e){}
-    if(!gl) return;                                   // no WebGL: the still CSS version of the field stays
+    if(!gl) return false;                             // no WebGL: the still / CSS version stays
 
-    const frag = `
-      #ifdef GL_FRAGMENT_PRECISION_HIGH
-      precision highp float;
-      #else
-      precision mediump float;
-      #endif
-      uniform vec2 uSize;      // canvas size in device px
-      uniform float uDpr;
-      uniform vec4 uT;         // swell A, swell B, breathing (each 0-1 through its cycle), ripple travel in px
-      const float TAU = 6.2831853;
-      const float PITCH = 18.0;     // space between lines
-      const float LAMBDA = 270.0;   // ripple length
-      const float AMP = 21.0;       // ripple height
-      void main(){
-        vec2 p = vec2(gl_FragCoord.x, uSize.y - gl_FragCoord.y) / uDpr;      // CSS px from the top-left
-        float u = (p.x - p.y) * 0.70710678;   // along the lines (they run bottom-left to top-right)
-        float v = (p.x + p.y) * 0.70710678;   // across the lines
-
-        float a1 = TAU * (u / 1100.0 + v / 760.0 - uT.x);        // big slow swell
-        float a2 = TAU * (u / 640.0 - v / 1300.0 + uT.y) + 1.3;   // smaller counter-swell
-        float a3 = TAU * (u / 1500.0 - v / 900.0 + uT.z);        // ripple height breathing
-        float ph = TAU * (u - uT.w) / LAMBDA;                     // the ripple itself
-        float amp = AMP * (1.0 + 0.3 * sin(a3));
-        float rip = sin(ph);
-
-        // every line is a contour of g, one per PITCH
-        float g = v - 19.0 * sin(a1) - 9.0 * sin(a2) - amp * rip;
-        float gu = -(19.0 * cos(a1) * TAU / 1100.0 + 9.0 * cos(a2) * TAU / 640.0
-                   + AMP * 0.3 * cos(a3) * TAU / 1500.0 * rip + amp * cos(ph) * TAU / LAMBDA);
-        float gv = 1.0 - (19.0 * cos(a1) * TAU / 760.0 - 9.0 * cos(a2) * TAU / 1300.0
-                   - AMP * 0.3 * cos(a3) * TAU / 900.0 * rip);
-        float dist = abs(g - PITCH * floor(g / PITCH + 0.5)) / length(vec2(gu, gv));   // px to the nearest line
-
-        float halfW = 0.62 + 0.3 * sin(a1 + 0.9);                 // line weight follows the big swell
-        float cover = clamp((halfW - dist) * uDpr + 0.5, 0.0, 1.0);
-        gl_FragColor = vec4(vec3(0.953, 0.933, 0.894) * cover, cover);
-      }`;
     function shader(type, src){
       const s = gl.createShader(type);
       gl.shaderSource(s, src); gl.compileShader(s);
       return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
     }
     const vs = shader(gl.VERTEX_SHADER, 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }');
-    const fs = shader(gl.FRAGMENT_SHADER, frag);
+    const fs = shader(gl.FRAGMENT_SHADER, WAVE_FRAG);
+    if(!vs || !fs) return false;
     const prog = gl.createProgram();
-    if(!vs || !fs) return;
     gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
     gl.useProgram(prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);   // one triangle covering the canvas
     const aLoc = gl.getAttribLocation(prog, 'a');
     gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
-    const uSize = gl.getUniformLocation(prog, 'uSize'), uDpr = gl.getUniformLocation(prog, 'uDpr'), uT = gl.getUniformLocation(prog, 'uT');
+    const U = n => gl.getUniformLocation(prog, n);
+    const uSize = U('uSize'), uDpr = U('uDpr'), uT = U('uT');
+    gl.uniform1f(U('uScale'), opt.scale);
+    gl.uniform2f(U('uW'), opt.weight[0], opt.weight[1]);
+    gl.uniform3f(U('uColor'), opt.color[0], opt.color[1], opt.color[2]);
 
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t0 = opt.offset || 0;
     let raf = 0, onScreen = !('IntersectionObserver' in window), lost = false;
     function draw(ms){
-      const t = ms / 1000;
+      if(!cv.width || !cv.height) return;
+      const t = ms / 1000 + t0;
       // each motion loops on its own clock (13s, 20s, 16s, 48s), so the field never visibly repeats
       gl.uniform4f(uT, (t / 13) % 1, (t / 20) % 1, (t / 16) % 1, (t * 270 / 48) % 270);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -2313,9 +2353,38 @@
     document.addEventListener('visibilitychange', sync);
     cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); lost = true; host.classList.remove('is-live'); sync(); });
     if('IntersectionObserver' in window){
-      new IntersectionObserver((entries) => { onScreen = entries[0].isIntersecting; sync(); }).observe(host);
+      new IntersectionObserver((entries) => { onScreen = entries[0].isIntersecting; sync(); }, { rootMargin: '120px 0px' }).observe(host);
     }
     sync();
+    return true;
+  }
+
+  // landing page and contact: large, faint lines in the paper colour
+  document.querySelectorAll('.wave-bg').forEach(function(host){
+    waveField(host, host.querySelector('canvas'), { scale: 1, weight: [0.62, 0.3], color: [0.953, 0.933, 0.894] });
+  });
+
+  // project icons: the same field at a smaller scale with bolder lines, in the project colour,
+  // cut to the icon's shape with a mask built from the icon's own clip path
+  document.querySelectorAll('.spread-orn').forEach(function(host, i){
+    const svg = host.querySelector('svg.wv'), clip = svg && svg.querySelector('clipPath');
+    if(!clip) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const m = document.createElementNS(ns, 'svg');
+    m.setAttribute('xmlns', ns);
+    m.setAttribute('viewBox', svg.getAttribute('viewBox'));
+    m.setAttribute('preserveAspectRatio', svg.getAttribute('preserveAspectRatio'));
+    Array.from(clip.children).forEach(function(c){
+      const k = c.cloneNode(true);
+      if(k.getAttribute('clip-rule')) k.setAttribute('fill-rule', k.getAttribute('clip-rule'));
+      m.appendChild(k);
+    });
+    const url = 'url("data:image/svg+xml,' + encodeURIComponent(new XMLSerializer().serializeToString(m)) + '")';
+    const cv = document.createElement('canvas');
+    cv.style.webkitMaskImage = url; cv.style.maskImage = url;
+    host.insertBefore(cv, svg);
+    const rgb = (getComputedStyle(host).color.match(/[\d.]+/g) || [255, 255, 255]).slice(0, 3).map(n => n / 255);
+    if(!waveField(host, cv, { scale: 0.42, weight: [2.7, 0.6], color: rgb, offset: i * 7.3 })) cv.remove();
   });
 
   // ---- Wave graphics: pause the flow while a graphic is off screen ----
@@ -2325,6 +2394,12 @@
     }, { rootMargin: '120px 0px' });
     document.querySelectorAll('.wv').forEach(el => wvIO.observe(el));
   }
+
+  // ---- Nav: switch on the phone backdrop once the page has scrolled under the nav ----
+  const siteNav = document.querySelector('header.site-nav');
+  const navScroll = () => siteNav.classList.toggle('is-scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', navScroll, { passive: true });
+  navScroll();
 
   // ---- Work index hover preview (desktop only) ----
   const preview = document.getElementById('indexPreview');
