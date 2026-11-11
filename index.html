@@ -311,33 +311,55 @@
     transform-origin: left;
   }
 
-  .hero-line-art{
-    position: absolute;
-    z-index: 0;
-    opacity: 0.9;
-  }
-  .hero-line-art svg{ display:block; width:100%; height:100%; }
-  .hero-line-art path{
-    fill:none;
-    stroke: var(--paper);
-    stroke-width: 1.1;
-    stroke-linecap: round;
-    opacity: 0.55;
-  }
-  .hero-line-art path.accent{ stroke: var(--gold); opacity:0.85; }
-  .hla-1{ top: -6%; right: -4%; width: min(46vw, 620px); height: min(46vw, 620px); }
-  .hla-2{ bottom: -8%; left: -6%; width: min(34vw, 420px); height: min(34vw, 420px); }
+  /* ---- wave graphics: one field of flowing sine lines, shown through an icon-shaped clip ---- */
+  .wv-defs{ position:absolute; width:0; height:0; overflow:hidden; }
+  .wv{ display:block; width:100%; height:auto; overflow:hidden; }
+  .wv-flow{ animation: wv-flow var(--wv-dur, 15s) linear infinite; }
+  .wv-paused .wv-flow{ animation-play-state: paused; }
+  @keyframes wv-flow{ from{ transform: translateX(-151px); } to{ transform: translateX(0); } }
+  @media (prefers-reduced-motion: reduce){ .wv-flow{ animation: none !important; } }
 
-  /* draw-in animation for line art */
-  .draw path{
-    stroke-dasharray: 900;
-    stroke-dashoffset: 900;
-    animation: draw 2.6s cubic-bezier(.65,0,.35,1) forwards;
+  /* moving wave backgrounds: the same field as the icons, faint and alive. Drawn live on a canvas so
+     the lines can sway and swell (see "Wave backgrounds" in the script). */
+  .wave-bg{ position: absolute; overflow: hidden; pointer-events: none; }
+  .wave-bg canvas, .wave-bg i{
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    opacity: 0.17;
   }
-  .draw path:nth-child(2){ animation-delay: .15s; }
-  .draw path:nth-child(3){ animation-delay: .3s; }
-  .draw path:nth-child(4){ animation-delay: .45s; }
-  @keyframes draw{ to{ stroke-dashoffset: 0; } }
+  /* still version of the field, shown only if the canvas can't run */
+  .wave-bg i{ background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='382' height='382' viewBox='0 0 382 382'><g transform='rotate(-45)' fill='none' stroke='%23f3eee4' stroke-width='1.2'><path id='l' d='M-540.23 0c22.28 10.97 43.22 21.16 67.53 21.16s45.24 -10.19 67.53 -21.16s43.22 -21.16 67.53 -21.16s45.24 10.19 67.53 21.16s43.22 21.16 67.53 21.16s45.24 -10.19 67.53 -21.16s43.22 -21.16 67.53 -21.16s45.24 10.19 67.53 21.16s43.22 21.16 67.53 21.16s45.24 -10.19 67.53 -21.16s43.22 -21.16 67.53 -21.16s45.24 10.19 67.53 21.16s43.22 21.16 67.53 21.16s45.24 -10.19 67.53 -21.16s43.22 -21.16 67.53 -21.16s45.24 10.19 67.53 21.16'/><use href='%23l' y='-36.015'/><use href='%23l' y='-18.008'/><use href='%23l' y='18.008'/><use href='%23l' y='36.015'/><use href='%23l' y='54.023'/><use href='%23l' y='72.031'/><use href='%23l' y='90.038'/><use href='%23l' y='108.046'/><use href='%23l' y='126.054'/><use href='%23l' y='144.061'/><use href='%23l' y='162.069'/><use href='%23l' y='180.077'/><use href='%23l' y='198.084'/><use href='%23l' y='216.092'/><use href='%23l' y='234.099'/><use href='%23l' y='252.107'/><use href='%23l' y='270.115'/><use href='%23l' y='288.122'/><use href='%23l' y='306.13'/><use href='%23l' y='324.138'/><use href='%23l' y='342.145'/><use href='%23l' y='360.153'/><use href='%23l' y='378.161'/><use href='%23l' y='396.168'/><use href='%23l' y='414.176'/><use href='%23l' y='432.184'/><use href='%23l' y='450.191'/><use href='%23l' y='468.199'/><use href='%23l' y='486.207'/><use href='%23l' y='504.214'/><use href='%23l' y='522.222'/><use href='%23l' y='540.23'/><use href='%23l' y='558.237'/><use href='%23l' y='576.245'/></g></svg>") 0 0 / 382px 382px; }
+  .wave-bg.is-live i{ display: none; }
+  .wave-bg::after{ content:''; position:absolute; inset:0; }
+
+  /* landing page: strongest in the empty top-right, quietest behind the headline and intro, gone by the fold */
+  .hero-waves{
+    top: 0; left: 0;
+    width: 100%; height: 100vh; height: 100svh;
+    opacity: 0;
+    animation: wv-in 2.4s ease .2s forwards;
+  }
+  .hero-waves::after{
+    background:
+      linear-gradient(to bottom, rgba(28,27,25,0) 58%, var(--ink) 100%),
+      linear-gradient(45deg, rgba(28,27,25,0) 4%, rgba(28,27,25,0.6) 38%, rgba(28,27,25,0.6) 62%, rgba(28,27,25,0) 96%);
+  }
+  @keyframes wv-in{ to{ opacity: 1; } }
+  @media (prefers-reduced-motion: reduce){
+    .hero-waves{ animation: none !important; opacity: 1; }
+  }
+
+  /* contact / footer: the mirror image. Nothing at the top, rising toward the bottom-left, full screen width */
+  .contact-waves{
+    top: 0; bottom: 0;
+    left: 50%; width: 100vw; margin-left: -50vw;
+    z-index: -1;
+  }
+  .contact-waves::after{
+    background:
+      linear-gradient(to top, rgba(28,27,25,0) 55%, var(--ink) 100%),
+      linear-gradient(45deg, rgba(28,27,25,0) 4%, rgba(28,27,25,0.6) 38%, rgba(28,27,25,0.6) 62%, rgba(28,27,25,0) 96%);
+  }
 
   /* ============ SECTION GENERIC ============ */
   section{ position: relative; }
@@ -450,8 +472,11 @@
     text-transform: uppercase;
     color: var(--muted);
     text-align:right;
-    max-width: 180px;
+    line-height: 1.7;
   }
+  /* line one: type of project. line two: kind of project. Each stays on its own line. */
+  .index-meta span{ display:block; white-space:nowrap; }
+  .index-meta span + span{ color: var(--muted-dim); }
   .index-arrow{
     font-family: var(--serif);
     font-style: italic;
@@ -486,8 +511,11 @@
   @media (max-width: 720px){ .index-preview{ display:none; } }
 
   @media (max-width: 720px){
-    .index-item a{ grid-template-columns: 34px 1fr auto; }
-    .index-meta{ display:none; }
+    /* phones: the two label lines sit under the project name */
+    .index-item a{ grid-template-columns: 34px 1fr auto; column-gap: 16px; row-gap: 8px; }
+    .index-num{ grid-row: 1 / span 2; align-self: start; padding-top: .7em; }
+    .index-meta{ grid-column: 2; grid-row: 2; text-align: left; font-size: 10.5px; }
+    .index-arrow{ grid-column: 3; grid-row: 1 / span 2; }
   }
 
   /* ============ CASE STUDY SPREADS ============ */
@@ -629,15 +657,29 @@
   .flavor b{ display:block; font-family: var(--serif); font-size: 1rem; font-weight: 500; }
   .flavor span{ font-family: var(--mono); font-size: 9.5px; letter-spacing:.08em; text-transform:uppercase; color: var(--muted-dim); }
 
-  /* corner line-art per spread */
-  .spread-orn{ position:absolute; opacity:0.5; pointer-events:none; }
-  .spread-orn svg{ width:100%; height:100%; display:block; }
-  .spread-orn path{ fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
-  .orn-tazo path{ stroke: var(--gold); }
-  .orn-poppy path{ stroke: var(--crimson); }
-  .orn-overlook path{ stroke: var(--mint); }
-  .orn-recycle path{ stroke: var(--green); }
-  @media (max-width: 780px){ .spread-orn{ display:none; } }
+  /* project icon: sits to the right of each project's intro text, centred on it.
+     Its height follows the paragraph (plus a little of the margin either side), so it never
+     reaches the hero shot above or the next heading below. */
+  .spread-intro.has-orn{
+    position: relative;
+    max-width: none;
+    padding-right: max(0px, calc(100% - 68ch));   /* same 68ch text column; the box now spans the row */
+  }
+  .spread-orn{
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    height: min(calc(100% + 80px), var(--orn-h, 180px));
+    aspect-ratio: var(--orn-ar, 1);
+    max-width: calc(100% - 68ch - 64px);
+    pointer-events: none;
+  }
+  .spread-orn .wv{ width: 100%; height: 100%; }
+  .orn-overlook{ color: var(--mint); --orn-h: 170px; --orn-ar: 616 / 392; }
+  .orn-recycle{ color: var(--green); --orn-h: 150px; --orn-ar: 400 / 388; }
+  .orn-tazo{ color: var(--gold); --orn-h: 170px; --orn-ar: 623 / 375; }
+  .orn-poppy{ color: var(--crimson); --orn-h: 160px; --orn-ar: 362 / 354; }
+  @media (max-width: 1180px){ .spread-orn{ display:none; } }
 
   /* ---- case hero: big opening shot of the finished work ---- */
   .case-hero{ margin-bottom: 90px; }
@@ -1314,7 +1356,7 @@
   .process-list p{ color: var(--muted); font-size: 14.5px; line-height:1.7; }
 
   /* ============ CONTACT / FOOTER ============ */
-  .contact{ border-top: 1px solid var(--line); text-align:center; }
+  .contact{ border-top: 1px solid var(--line); text-align:center; position: relative; isolation: isolate; }
   .contact .eyebrow{ display:block; margin-bottom: 26px; }
   .contact h2{
     font-family: var(--serif);
@@ -1384,24 +1426,15 @@
   </nav>
 </header>
 
+<!-- shared wave field: every wave graphic on the page draws from this one definition -->
+<svg class="wv-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><path id="wv-l" d="M-604 0c12.46 6.09 24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75s24.16 11.75 37.75 11.75s25.29 -5.66 37.75 -11.75s24.16 -11.75 37.75 -11.75s25.29 5.66 37.75 11.75"/><g id="wv-field" fill="none" stroke="currentColor"><use href="#wv-l"/><use href="#wv-l" y="-400"/><use href="#wv-l" y="-390"/><use href="#wv-l" y="-380"/><use href="#wv-l" y="-370"/><use href="#wv-l" y="-360"/><use href="#wv-l" y="-350"/><use href="#wv-l" y="-340"/><use href="#wv-l" y="-330"/><use href="#wv-l" y="-320"/><use href="#wv-l" y="-310"/><use href="#wv-l" y="-300"/><use href="#wv-l" y="-290"/><use href="#wv-l" y="-280"/><use href="#wv-l" y="-270"/><use href="#wv-l" y="-260"/><use href="#wv-l" y="-250"/><use href="#wv-l" y="-240"/><use href="#wv-l" y="-230"/><use href="#wv-l" y="-220"/><use href="#wv-l" y="-210"/><use href="#wv-l" y="-200"/><use href="#wv-l" y="-190"/><use href="#wv-l" y="-180"/><use href="#wv-l" y="-170"/><use href="#wv-l" y="-160"/><use href="#wv-l" y="-150"/><use href="#wv-l" y="-140"/><use href="#wv-l" y="-130"/><use href="#wv-l" y="-120"/><use href="#wv-l" y="-110"/><use href="#wv-l" y="-100"/><use href="#wv-l" y="-90"/><use href="#wv-l" y="-80"/><use href="#wv-l" y="-70"/><use href="#wv-l" y="-60"/><use href="#wv-l" y="-50"/><use href="#wv-l" y="-40"/><use href="#wv-l" y="-30"/><use href="#wv-l" y="-20"/><use href="#wv-l" y="-10"/><use href="#wv-l" y="10"/><use href="#wv-l" y="20"/><use href="#wv-l" y="30"/><use href="#wv-l" y="40"/><use href="#wv-l" y="50"/><use href="#wv-l" y="60"/><use href="#wv-l" y="70"/><use href="#wv-l" y="80"/><use href="#wv-l" y="90"/><use href="#wv-l" y="100"/><use href="#wv-l" y="110"/><use href="#wv-l" y="120"/><use href="#wv-l" y="130"/><use href="#wv-l" y="140"/><use href="#wv-l" y="150"/><use href="#wv-l" y="160"/><use href="#wv-l" y="170"/><use href="#wv-l" y="180"/><use href="#wv-l" y="190"/><use href="#wv-l" y="200"/><use href="#wv-l" y="210"/><use href="#wv-l" y="220"/><use href="#wv-l" y="230"/><use href="#wv-l" y="240"/><use href="#wv-l" y="250"/><use href="#wv-l" y="260"/><use href="#wv-l" y="270"/><use href="#wv-l" y="280"/><use href="#wv-l" y="290"/><use href="#wv-l" y="300"/><use href="#wv-l" y="310"/><use href="#wv-l" y="320"/><use href="#wv-l" y="330"/><use href="#wv-l" y="340"/><use href="#wv-l" y="350"/><use href="#wv-l" y="360"/><use href="#wv-l" y="370"/><use href="#wv-l" y="380"/><use href="#wv-l" y="390"/><use href="#wv-l" y="400"/></g></defs></svg>
+
 <main id="top">
+
+  <div class="wave-bg hero-waves" aria-hidden="true"><i></i><canvas></canvas></div>
 
   <!-- ============ HERO ============ -->
   <section class="hero wrap" id="hero">
-
-    <div class="hero-line-art hla-1 draw" aria-hidden="true">
-      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-        <path d="M370 40 C 300 20, 250 70, 260 130 C 270 190, 200 200, 190 260 C 182 310, 130 320, 110 370" />
-        <path class="accent" d="M330 30 C 300 90, 320 120, 280 150 C 240 180, 250 230, 210 250" />
-        <path d="M60 140 C 100 150, 120 190, 90 220 C 65 245, 80 270, 60 300" />
-      </svg>
-    </div>
-    <div class="hero-line-art hla-2 draw" aria-hidden="true">
-      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 380 C 60 300, 90 320, 120 260 C 150 200, 210 220, 230 150 C 245 100, 300 90, 330 30" />
-        <path class="accent" d="M20 320 C 70 290, 80 250, 60 210" />
-      </svg>
-    </div>
 
     <p class="eyebrow hero-eyebrow reveal">PORTFOLIO – SELECTED WORK, 2024–2026</p>
 
@@ -1412,9 +1445,9 @@
     <div class="hero-foot reveal reveal-delay-3">
       <div class="hero-scroll">Scroll<div class="line"></div></div>
       <div class="hero-tags">
-        <a href="#tazo" style="--tag-color:var(--gold)" aria-label="Brand &amp; Packaging: view the Tazo Tea Box project">Brand &amp; Packaging</a>
         <a href="#overlook" style="--tag-color:var(--mint)" aria-label="Data Visualization: view the Fear on the Road project">Data Visualization</a>
         <a href="#recycle" style="--tag-color:var(--green)" aria-label="UX/UI: view the SF Recycle Plus project">UX/UI</a>
+        <a href="#tazo" style="--tag-color:var(--gold)" aria-label="Brand &amp; Packaging: view the Tazo Tea Box project">Brand &amp; Packaging</a>
       </div>
     </div>
   </section>
@@ -1431,7 +1464,7 @@
         <a href="#overlook" data-preview="images/01-overlook-01-finished-fear-road-poster-mounted.jpg">
           <span class="index-num">01</span>
           <span class="index-title">Fear on the Road</span>
-          <span class="index-meta">Research &amp; Data Viz · Personal Project</span>
+          <span class="index-meta"><span>Research &amp; Data Viz</span><span>Personal Project</span></span>
           <span class="index-arrow">→</span>
         </a>
       </li>
@@ -1439,7 +1472,7 @@
         <a href="#recycle" data-preview="images/02-recycle-01-iphone-resting-orange-corduroy-showing.jpg">
           <span class="index-num">02</span>
           <span class="index-title">SF Recycle Plus</span>
-          <span class="index-meta">UX/UI Design · Team Project</span>
+          <span class="index-meta"><span>UX/UI Design</span><span>Team Project</span></span>
           <span class="index-arrow">→</span>
         </a>
       </li>
@@ -1447,7 +1480,7 @@
         <a href="#tazo" data-preview="images/03-tazo-01-three-tazo-classic-boxes-earl.jpg">
           <span class="index-num">03</span>
           <span class="index-title">Tazo Tea Box</span>
-          <span class="index-meta">Brand &amp; Packaging · Product Line Concept</span>
+          <span class="index-meta"><span>Brand &amp; Packaging</span><span>Product Line Concept</span></span>
           <span class="index-arrow">→</span>
         </a>
       </li>
@@ -1455,7 +1488,7 @@
         <a href="#poppy" data-preview="images/04-poppy-01-poppy-soda-black-cherry-bottle.jpg">
           <span class="index-num">04</span>
           <span class="index-title">Poppy Soda</span>
-          <span class="index-meta">Packaging System · Solo Project, 2024</span>
+          <span class="index-meta"><span>Packaging System</span><span>Solo Project</span></span>
           <span class="index-arrow">→</span>
         </a>
       </li>
@@ -1465,9 +1498,6 @@
 
   <!-- ============ 01 OVERLOOK ROAD ============ -->
   <section class="spread spread-overlook" id="overlook">
-    <div class="spread-orn orn-overlook" style="top:6%; left:4%; width:170px; height:170px;" aria-hidden="true">
-      <svg viewBox="0 0 200 200"><path d="M10 30 L 70 130 L 110 70 L 190 190" /><path d="M10 190 L100 190" opacity="0.5"/></svg>
-    </div>
     <div class="wrap">
       <div class="spread-head reveal">
         <div>
@@ -1482,7 +1512,7 @@
         <figcaption>The finished poster, mocked up at scale as a mounted print</figcaption>
       </figure>
 
-      <p class="spread-intro reveal"> Overlook road is a private road that is located in Los Gatos. With this project, I wanted to find out and visualize people's perception and experience the road in a unique way.</p>
+      <p class="spread-intro has-orn reveal"> Overlook road is a private road that is located in Los Gatos. With this project, I wanted to find out and visualize people's perception and experience the road in a unique way.<span class="spread-orn orn-overlook" aria-hidden="true"><svg class="wv wv-scene" viewBox="30 10 616 392" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false"><defs><clipPath id="wv-c-overlook"><path d="M258 400L445.01 106.96Q452 96 458.84 107.06L640 400ZM184 400L292.61 242.7Q300 232 307.47 242.64L418 400Z"/><circle cx="176" cy="128" r="78"/></clipPath></defs><g clip-path="url(#wv-c-overlook)"><g transform="translate(340 220) rotate(-45) scale(1.17)"><use href="#wv-field" class="wv-flow" stroke-width="3.07"/></g></g><circle fill="currentColor" cx="124" cy="104" r="88"/><path fill="currentColor" d="M393.29 188L445.01 106.96Q452 96 458.84 107.06L508.89 188L489.63 165.92L470.36 193.52L451.09 165.92L431.82 193.52L412.56 165.92ZM259.95 290L293.75 241.05Q300 232 306.32 241L340.74 290L320.54 276.08L300.35 293.48L280.15 276.08Z"/></svg></span></p>
 
       <h4 class="process-subhead reveal">Let's interview</h4>
 
@@ -1535,9 +1565,6 @@
 
   <!-- ============ 02 RECYCLE ============ -->
   <section class="spread spread-recycle" id="recycle">
-    <div class="spread-orn orn-recycle" style="top:46%; right:6%; width:150px; height:150px;" aria-hidden="true">
-      <svg viewBox="0 0 200 200"><path d="M48.3 81.2 A 55 55 0 0 1 151.7 81.2" /><path d="M154.9 63.5 L151.7 81.2 L137.9 69.6" /><path d="M151.7 118.8 A 55 55 0 0 1 48.3 118.8" /><path d="M45.1 136.5 L48.3 118.8 L62.1 130.4" /></svg>
-    </div>
     <div class="wrap">
       <div class="spread-head reveal">
         <div>
@@ -1552,7 +1579,7 @@
         <figcaption>SF Recycle Plus: the welcome screen, where an account starts tracking your progress and rewards</figcaption>
       </figure>
 
-      <p class="spread-intro reveal">Recycling has always been marketed as something good for the environment, but not everyone knows how to properly recycle. Through careful research, my team and I were tasked with finding and proposing a solution that would help build towards a more environmentally conscious future.</p>
+      <p class="spread-intro has-orn reveal">Recycling has always been marketed as something good for the environment, but not everyone knows how to properly recycle. Through careful research, my team and I were tasked with finding and proposing a solution that would help build towards a more environmentally conscious future.<span class="spread-orn orn-recycle" aria-hidden="true"><svg class="wv wv-recycle" viewBox="0 0 400 388" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false"><defs><clipPath id="wv-c-recycle"><path d="M4 234L29.1 283.3L44.7 308.9L60.2 328.5L69.2 337.2L77.2 343.5L88.8 350.4L101.2 355.3L179 355L179.3 257.3L43.5 257.1L36.9 255.3L26.2 250.1L15.6 243.2ZM391.9 235.2L384.7 242.4L375.5 248.7L362.2 254.2L352.7 256.2L255 256.8L254.5 227.4L209.8 307.5L254.5 387L255 354.5L288.2 354.2L298.8 352.7L310.1 349.9L321 345.2L329.4 340.1L334.9 335.7L342.9 327.7L353 314.1L361.1 300.3ZM1.2 124.8L32.6 142.1L0.3 207.5L4.6 217.9L12.4 229.7L21.6 239.2L29.7 245L38.6 249.3L47 251.6L80.1 252.2L110.4 189L140.9 207.5L95.4 124.8ZM358.8 123.1L274.6 174.1L316.1 251L353 251.3L363.7 248.1L371.8 243.8L382.7 235.4L391.9 225.4L398 214.7L399.4 209.8L399.7 204.9ZM116.7 4.6L111.8 6.6L69.2 70.9L152.7 123.3L193.4 45.2L177.2 24.8L167.1 15.3L157.9 8.9L147.3 4.3L136.9 2.3L126.2 2.6ZM157.3 0.3L166.3 6.6L174.9 14.4L186.5 26.8L196.3 39.2L204.9 51.9L215.3 69.5L225.4 89.3L232.6 105.5L201.7 122.5L300 122.2L345.5 41.2L321.6 56.5L305.8 28.8L296 15.6L290.2 9.8L285.6 6.3L279.5 3.2L273.5 1.2L266.6 0Z"/></clipPath></defs><g clip-path="url(#wv-c-recycle)"><g transform="translate(200 194) rotate(-45) scale(1.17)"><use href="#wv-field" class="wv-flow" stroke-width="3.07"/></g></g></svg></span></p>
 
       <h4 class="process-subhead reveal">The brief</h4>
 
@@ -1771,16 +1798,13 @@
 
   <!-- ============ 03 TAZO ============ -->
   <section class="spread spread-tazo" id="tazo">
-    <div class="spread-orn orn-tazo" style="top:8%; right:4%; width:160px; height:160px;" aria-hidden="true">
-      <svg viewBox="0 0 200 200"><path d="M10 190 C 40 150, 30 110, 70 90 C 110 70, 100 30, 140 10" /></svg>
-    </div>
     <div class="wrap">
       <div class="spread-head reveal">
         <div>
           <p class="eyebrow">03 – BRAND &amp; PACKAGING</p>
           <h3>Tazo Tea Box</h3>
         </div>
-        <p class="tagline">Designing a classic line for an already-iconic brand.</p>
+        <p class="tagline">Designing a classic line for an <span style="white-space:nowrap">already-iconic brand.</span></p>
       </div>
 
       <figure class="case-hero reveal">
@@ -1788,7 +1812,7 @@
         <figcaption>The final family, shelf-ready: Earl Grey, Jasmine, and Sencha</figcaption>
       </figure>
 
-      <p class="spread-intro reveal">This project was focused on designing a product line for an existing tea brand called Tazo. It was important to keep in mind the current brand identity and create a product line that stands out but is also visually coherent with the rest of Tazo&rsquo;s boxes.</p>
+      <p class="spread-intro has-orn reveal">This project was focused on designing a product line for an existing tea brand called Tazo. It was important to keep in mind the current brand identity and create a product line that stands out but is also visually coherent with the rest of Tazo&rsquo;s boxes.<span class="spread-orn orn-tazo" aria-hidden="true"><svg class="wv wv-leaf" viewBox="334 419 623 375" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false"><defs><clipPath id="wv-c-tazo"><path clip-rule="evenodd" d="M718.27,671.66c-100.32-57.11-182.11-66.01-245.37-26.71,46.81-23.25,102.19-19.83,166.14,10.26-127.79,81.73-227.55,68.55-299.28-39.56,37.32,9.47,76.77,1.98,118.34-22.46,96.44-62.57,183.17-36.41,260.18,78.48ZM756.41,515.92c-41.95-23.78-68.16-54.2-78.62-91.26-57.76,116.18-19.3,209.17,115.38,278.97-5.92-70.42-30.64-120.09-74.18-149.01,65.67,35.14,98.85,110.42,99.55,225.85,60.99-124.14,40.28-212.32-62.13-264.56ZM730.93,717.33c-26.2-21.08-60.79-28.6-93.37-20.31-32.59,8.29-59.37,31.44-72.3,62.48,24.22,23.15,58.15,33.14,91.05,26.82,32.9-6.32,60.71-28.17,74.63-58.65,0,0-29.47,4.35-88.42,13.06,0,0,29.47-7.8,88.42-23.4ZM632.72,547.96c5.16-33.23-5.62-66.95-29.1-91.02-23.48-24.07-56.91-35.7-90.26-31.38-7.93,32.55.37,66.93,22.3,92.26,21.93,25.33,54.75,38.49,88.11,35.31,0,0-18.51-23.35-55.52-70.04,0,0,21.49,21.62,64.47,64.87ZM882.88,644.54c31.35-12.15,55.16-38.34,64.27-70.71,9.11-32.37,2.46-67.14-17.95-93.86-32.16,9.4-57.77,33.79-68.75,65.44-10.98,31.65-5.95,66.66,13.48,93.96,0,0,10.97-27.7,32.9-83.1,0,0-7.98,29.42-23.95,88.27Z"/></clipPath></defs><g clip-path="url(#wv-c-tazo)"><g transform="translate(645 606) rotate(-45) scale(1.17)"><use href="#wv-field" class="wv-flow" stroke-width="3.07"/></g></g></svg></span></p>
 
       <h4 class="process-subhead reveal">Learning the market</h4>
 
@@ -1962,16 +1986,13 @@
 
   <!-- ============ 04 POPPY ============ -->
   <section class="spread spread-poppy" id="poppy">
-    <div class="spread-orn orn-poppy" style="bottom:10%; left:3%; width:150px; height:150px;" aria-hidden="true">
-      <svg viewBox="0 0 200 200"><circle cx="40" cy="160" r="26" fill="none" stroke-width="1.1"/><circle cx="90" cy="120" r="14" fill="none" stroke-width="1.1"/><path d="M120 40 C150 70,140 100,170 110" /></svg>
-    </div>
     <div class="wrap">
       <div class="spread-head reveal">
         <div>
           <p class="eyebrow">04 – PACKAGING SYSTEM</p>
           <h3>Poppy Soda</h3>
         </div>
-        <p class="tagline">One label system, six flavors, zero confusion at the shelf.</p>
+        <p class="tagline">One label system, six flavors, zero confusion at the&nbsp;shelf.</p>
       </div>
 
       <figure class="case-hero reveal">
@@ -1979,7 +2000,7 @@
         <figcaption>Black Cherry, 12 fl oz: the label system applied</figcaption>
       </figure>
 
-      <p class="spread-intro reveal">A solo project built around a simple constraint: six very different fruit flavours, one label system, and no confusion at the shelf. Each flavour draws its palette from the real fruit, held together by a trio of circles standing in for carbonation.</p>
+      <p class="spread-intro has-orn reveal">A solo project built around a simple constraint: six very different fruit flavours, one label system, and no confusion at the shelf. Each flavour draws its palette from the real fruit, held together by a trio of circles standing in for carbonation.<span class="spread-orn orn-poppy" aria-hidden="true"><svg class="wv wv-bubbles" viewBox="16 40 362 354" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false"><defs><clipPath id="wv-c-poppy"><circle cx="152" cy="258" r="130"/><circle cx="306" cy="112" r="66"/><circle cx="318" cy="306" r="30"/></clipPath></defs><g clip-path="url(#wv-c-poppy)"><g transform="translate(200 200) rotate(-45) scale(1.17)"><use href="#wv-field" class="wv-flow" stroke-width="3.07"/></g></g></svg></span></p>
 
       <h4 class="process-subhead reveal">Learning the market</h4>
 
@@ -2141,6 +2162,7 @@
 
   <!-- ============ CONTACT ============ -->
   <section class="contact wrap section-pad" id="contact">
+    <div class="wave-bg contact-waves" aria-hidden="true"><i></i><canvas></canvas></div>
     <p class="eyebrow reveal">GET IN TOUCH</p>
     <h2 class="reveal reveal-delay-1">Have a project<br>in <em>mind?</em></h2>
     <button class="contact-email reveal reveal-delay-2" id="copyEmail" type="button"
@@ -2195,6 +2217,113 @@
     // force everything visible after a short delay so nothing stays hidden.
     window.addEventListener('load', () => setTimeout(revealAll, 1200));
     setTimeout(revealAll, 2000);
+  }
+
+  // ---- Wave backgrounds (landing page and contact): living wave field ----
+  // Same diagonal sine lines as the project icons, but worked out for every pixel on the graphics
+  // card so they can move like water instead of sliding as one sheet: the ripple travels along
+  // each line, two slow swells push the lines from side to side, the ripple height breathes, and
+  // the lines get a little heavier and lighter as the swell passes through them.
+  document.querySelectorAll('.wave-bg').forEach(function(host){
+    const cv = host.querySelector('canvas');
+    let gl = null;
+    try{ gl = cv.getContext('webgl', { antialias:false, depth:false, stencil:false, powerPreference:'low-power' }); }catch(e){}
+    if(!gl) return;                                   // no WebGL: the still CSS version of the field stays
+
+    const frag = `
+      #ifdef GL_FRAGMENT_PRECISION_HIGH
+      precision highp float;
+      #else
+      precision mediump float;
+      #endif
+      uniform vec2 uSize;      // canvas size in device px
+      uniform float uDpr;
+      uniform vec4 uT;         // swell A, swell B, breathing (each 0-1 through its cycle), ripple travel in px
+      const float TAU = 6.2831853;
+      const float PITCH = 18.0;     // space between lines
+      const float LAMBDA = 270.0;   // ripple length
+      const float AMP = 21.0;       // ripple height
+      void main(){
+        vec2 p = vec2(gl_FragCoord.x, uSize.y - gl_FragCoord.y) / uDpr;      // CSS px from the top-left
+        float u = (p.x - p.y) * 0.70710678;   // along the lines (they run bottom-left to top-right)
+        float v = (p.x + p.y) * 0.70710678;   // across the lines
+
+        float a1 = TAU * (u / 1100.0 + v / 760.0 - uT.x);        // big slow swell
+        float a2 = TAU * (u / 640.0 - v / 1300.0 + uT.y) + 1.3;   // smaller counter-swell
+        float a3 = TAU * (u / 1500.0 - v / 900.0 + uT.z);        // ripple height breathing
+        float ph = TAU * (u - uT.w) / LAMBDA;                     // the ripple itself
+        float amp = AMP * (1.0 + 0.3 * sin(a3));
+        float rip = sin(ph);
+
+        // every line is a contour of g, one per PITCH
+        float g = v - 19.0 * sin(a1) - 9.0 * sin(a2) - amp * rip;
+        float gu = -(19.0 * cos(a1) * TAU / 1100.0 + 9.0 * cos(a2) * TAU / 640.0
+                   + AMP * 0.3 * cos(a3) * TAU / 1500.0 * rip + amp * cos(ph) * TAU / LAMBDA);
+        float gv = 1.0 - (19.0 * cos(a1) * TAU / 760.0 - 9.0 * cos(a2) * TAU / 1300.0
+                   - AMP * 0.3 * cos(a3) * TAU / 900.0 * rip);
+        float dist = abs(g - PITCH * floor(g / PITCH + 0.5)) / length(vec2(gu, gv));   // px to the nearest line
+
+        float halfW = 0.62 + 0.3 * sin(a1 + 0.9);                 // line weight follows the big swell
+        float cover = clamp((halfW - dist) * uDpr + 0.5, 0.0, 1.0);
+        gl_FragColor = vec4(vec3(0.953, 0.933, 0.894) * cover, cover);
+      }`;
+    function shader(type, src){
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s);
+      return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+    }
+    const vs = shader(gl.VERTEX_SHADER, 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }');
+    const fs = shader(gl.FRAGMENT_SHADER, frag);
+    const prog = gl.createProgram();
+    if(!vs || !fs) return;
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);   // one triangle covering the canvas
+    const aLoc = gl.getAttribLocation(prog, 'a');
+    gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+    const uSize = gl.getUniformLocation(prog, 'uSize'), uDpr = gl.getUniformLocation(prog, 'uDpr'), uT = gl.getUniformLocation(prog, 'uT');
+
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0, onScreen = !('IntersectionObserver' in window), lost = false;
+    function draw(ms){
+      const t = ms / 1000;
+      // each motion loops on its own clock (13s, 20s, 16s, 48s), so the field never visibly repeats
+      gl.uniform4f(uT, (t / 13) % 1, (t / 20) % 1, (t / 16) % 1, (t * 270 / 48) % 270);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    function resize(){
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr);
+      gl.viewport(0, 0, cv.width, cv.height);
+      gl.uniform2f(uSize, cv.width, cv.height); gl.uniform1f(uDpr, dpr);
+      draw(still ? 0 : performance.now());
+    }
+    function frame(ms){ draw(ms); raf = requestAnimationFrame(frame); }
+    function sync(){
+      const run = onScreen && !still && !lost && !document.hidden;
+      if(run && !raf) raf = requestAnimationFrame(frame);
+      if(!run && raf){ cancelAnimationFrame(raf); raf = 0; }
+    }
+    resize();
+    host.classList.add('is-live');
+    if('ResizeObserver' in window) new ResizeObserver(() => { if(!lost) resize(); }).observe(host);
+    else window.addEventListener('resize', () => { if(!lost) resize(); });
+    document.addEventListener('visibilitychange', sync);
+    cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); lost = true; host.classList.remove('is-live'); sync(); });
+    if('IntersectionObserver' in window){
+      new IntersectionObserver((entries) => { onScreen = entries[0].isIntersecting; sync(); }).observe(host);
+    }
+    sync();
+  });
+
+  // ---- Wave graphics: pause the flow while a graphic is off screen ----
+  if('IntersectionObserver' in window){
+    const wvIO = new IntersectionObserver((entries) => {
+      entries.forEach(e => e.target.classList.toggle('wv-paused', !e.isIntersecting));
+    }, { rootMargin: '120px 0px' });
+    document.querySelectorAll('.wv').forEach(el => wvIO.observe(el));
   }
 
   // ---- Work index hover preview (desktop only) ----
